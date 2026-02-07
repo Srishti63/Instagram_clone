@@ -1,5 +1,4 @@
 import { Activity } from "../models/activity.model.js";
-import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const createActivity = async ({

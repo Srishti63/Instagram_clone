@@ -2,12 +2,13 @@ import { uploadOnCloudinary } from "../utils/cloudinary";
 import { Story } from "../models/story.model";
 import { ApiError } from "../utils/ApiError";
 import {ApiResponse} from "../utils/ApiResponse";
+import {createActivity} from "./activity.controller.js"
 
 const postStory = asyncHandler(async(req , res)=>{
     const medialocalPath = req.files?.media?.[0]?.path;
     const {captions= ""} = req.body;
 
-    if(!mediaUrl) {
+    if(!medialocalPath) {
         throw new ApiError(400,"No media found to upload")
     }
 
@@ -18,7 +19,7 @@ const postStory = asyncHandler(async(req , res)=>{
     }
 
     const story = await Story.create({
-        owner : req.User._id,
+        owner : req.user._id,
         mediaUrl: uploadedMedia.secure_url,
         mediaType : uploadedMedia.resource_type,
         captions,
@@ -39,7 +40,7 @@ const getActiveStories = asyncHandler(async(req,res)=>{
         expiresAt : {$gt: new Date()}
     })
 
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(201,activeStories,"Active stories")
     )
 })
@@ -52,8 +53,14 @@ const markStorySeen = asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Story ID is required")
     }
 
-    if(storyId.tostring()==viewer.tostring()){
-        res.json(
+    const story = await Story.findById(storyId);
+    if (!story) {
+        throw new ApiError(404, "Story not found");
+    }
+
+
+    if(story.owner.toString() === viewer.toString()){
+        return res.json(
             new ApiResponse(
                 200,
                 {},
@@ -65,15 +72,22 @@ const markStorySeen = asyncHandler(async(req,res)=>{
     await Story.findByIdAndUpdate(
         storyId,
         {
-            $addToSet:{ viewers: userId}
+            $addToSet:{ viewers: viewer }
         },
         {
             new : true
         }
     );
 
-    res.status(201).json(
-        new ApiResponse(200,{},"Story marked as soon")
+    await createActivity({
+        type: "story_view",
+        actor: viewer,
+        recipient: story.owner, 
+        story: storyId
+    });
+
+    res.status(200).json(
+        new ApiResponse(200,{},"Story marked as seen")
     ); 
 });
 

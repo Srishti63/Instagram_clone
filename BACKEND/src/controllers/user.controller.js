@@ -209,14 +209,31 @@ const updateAvatar = asyncHandler(async (req, res) => {
     );
 });
 
-const getUserProfile = asyncHandler(async(req,res)=>{
-
-})
-
-const updateUserBio = asyncHandler(async(req,res)=>{
-
-})
-
+const getUserProfile = asyncHandler(async (req, res) => {
+    const userId = req.params.id || req.user._id;
+    const user = await User.findById(userId).select("-password -refreshToken");
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    return res.status(200).json(
+        new ApiResponse(200, user, "User profile fetched successfully")
+    );
+});
+const updateUserBio = asyncHandler(async (req, res) => {
+    const { bio } = req.body;
+    if (!bio || bio.trim() === "") {
+        throw new ApiError(400, "Bio is required");
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    user.bio = bio;
+    await user.save({ validateBeforeSave: false });
+    return res.status(200).json(
+        new ApiResponse(200, user, "User bio updated successfully")
+    );
+});
 
 
 export {
@@ -225,5 +242,7 @@ export {
     logoutUser,
     getCurrUser,
     refreshAccessToken,
-    updateAvatar
+    updateAvatar,
+    getUserProfile,
+    updateUserBio
 }

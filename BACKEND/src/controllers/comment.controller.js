@@ -24,6 +24,14 @@ const addCommentOnPost = asyncHandler(async (req, res) => {
     owner: userId,
     text
   });
+  if (post.owner.toString() !== userId.toString()) {
+    await createActivity({
+      type: "post_comment",
+      actor: userId,
+      recipient: post.owner,
+      post: postId
+    });
+  }
 
   res.status(201).json(
     new ApiResponse(

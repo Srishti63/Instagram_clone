@@ -2,7 +2,7 @@ import {asyncHandler} from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import {Post} from "../models/post.model";
-import {User} from "../models/user.model"
+import { createActivity } from "./activity.controller";
 import { uploadOnCloudinary } from "../utils/cloudinary";
 
 const CreatePost = asyncHandler(async(req,res)=>{
@@ -33,7 +33,7 @@ const CreatePost = asyncHandler(async(req,res)=>{
             "Post uploaded successfully"
         )
     )
-})//create , edit , delete , likes , fetchposts
+});
 
 const getFeedPosts = asyncHandler(async (req, res) => {
   let { page = 1, limit = 10 } = req.query;
@@ -115,22 +115,30 @@ const toggleLikeOnPost = asyncHandler(async(req,res)=>{
     let isLiked ;
 
     if(Post.likes.includes(userId)){
-      await findByIdAndUpdate(
+      await Post.findByIdAndUpdate(
         postId,
         {$pull : {likes : userId}},
         {new : true}
       );
       isLiked = false
     }else{
-      await findByIdAndUpdate(
+      await Post.findByIdAndUpdate(
         postId,
         {$addToSet : {likes : userId}},
         {new : false}
       );
-      isLiked = true
-    }
-    
-    const upadatedPost = await findById(post).select("likes");
+      isLiked = true;
+    if(post.owner.toString() !== userId.toString()){
+          await createActivity({
+            type: "post_like",
+            actor: userId,
+            recipient: post.owner,
+            post: postId
+          });
+        }
+      }
+
+    const upadatedPost = await Post.findById(post).select("likes");
 
     res.status(200).json(
       new ApiResponse(

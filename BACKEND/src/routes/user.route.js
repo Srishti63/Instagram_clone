@@ -1,12 +1,26 @@
-import {Router} from "express";
-
-import {
-     RegisterUser,
+import express from "express";
+import { 
+    RegisterUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    getCurrUser,
+    refreshAccessToken,
+    updateAvatar,
+    getUserProfile,
+    updateUserBio
 } from "../controllers/user.controller.js";
+import { verifyJwt } from "../middlewares/auth.js";
+import { upload } from "../middlewares/multer.middleware.js"; 
 
-import {upload} from "../"
+const router = express.Router();
 
-const route = Router();
+router.post("/register", RegisterUser);
+router.post("/login", loginUser);
+router.post("/logout", verifyJwt, logoutUser);
+router.get("/me", verifyJwt, getCurrUser);
+router.post("/refresh-token", refreshAccessToken);
+router.put("/avatar", verifyJwt, upload.single("avatar"), updateAvatar); 
+router.get("/profile/:id?", verifyJwt, getUserProfile);
+router.put("/bio", verifyJwt, updateUserBio);
 
+export default router;
