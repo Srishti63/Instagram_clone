@@ -2,12 +2,14 @@ import {asyncHandler} from "../utils/asyncHandler";
 import { User } from "../models/user.model";
 import { ApiError} from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
+import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {v2 as cloudinary} from "cloudinary";
 
 const generateAccessAndRefreshToken = asyncHandler(async(userId)=>{
     try {
         const user = await User.findById(userId)
-        const accessToken = User.generateAccessToken()
-        const refreshToken = User.generateRefreshToken()
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
 
         user.refreshToken = refreshToken
         await user.save({validateBeforeSave : false})
@@ -36,7 +38,7 @@ const RegisterUser = asyncHandler(async(req ,res)=>{
     }
 
     const user = await User.create({
-        username : username.tolowercase(),
+        username : username.toLowercase(),
         email ,
         password
     });
@@ -75,7 +77,7 @@ const loginUser = asyncHandler(async(req,res)=>{
 
      const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id)
 
-     const LoggedInuser = await user.findById(user._id).select("-password -refreshToken")
+     const LoggedInuser = await User.findById(user._id).select("-password -refreshToken")
 
      const options = {
         httpOnly : true,
@@ -94,7 +96,7 @@ const loginUser = asyncHandler(async(req,res)=>{
 })
 
 const logoutUser = asyncHandler(async(req,res)=>{
-    await findByIdAndUpdate(
+    await User.findByIdAndUpdate(
         req.user._id,
     {
         $unset:{
@@ -111,16 +113,117 @@ const logoutUser = asyncHandler(async(req,res)=>{
 
     return res
     .status(201)
-    .clearcookie("accessToken",options)
-    .clearcookie("refreshToken",options)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
     .json(
         new ApiResponse(201, {}, "User LoggedOut Successfully")
     ) 
 })
 
+const getCurrUser = asyncHandler(async(req,res)=>{
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            req.user,
+            "Current user fetched successfully"
+        )
+    )
+})
+
+const refreshAccessToken = asyncHandler(async(req,res)=>{
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if(!incomingRefreshToken){
+        throw new ApiError(404, "Unauthorized Request")
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+
+        const user = await User.findById(decodedToken?._id)
+
+        if(!user){
+            throw new ApiError(404,"Invalid refresh token")
+        }
+
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(401, "Refresh token is expired or used")
+        }
+
+        const options ={
+            httpOnly: true,
+            secure : true 
+        }
+
+        const {accessToken ,newrefreshToken} = await generateAccessAndRefreshToken(user._id)
+        
+        return res.status(200)
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken", newrefreshToken,options)
+        .json(
+            new ApiResponse(
+                200,
+                {accessToken,refreshToken : newrefreshToken},
+                "Access token refreshed"
+            )
+        )
+    } catch (err) {
+        throw new ApiError(401, err?.message || "Invalid refresh token")
+    }
+})
+
+const updateAvatar = asyncHandler(async (req, res) => {
+
+    if (!req.file) {
+        throw new ApiError(400, "Avatar file is required");
+    }
+
+    const user = await User.findById(req.user._id);
+
+    const uploadedAvatar = await uploadOnCloudinary(req.file.path);
+
+    if (!uploadedAvatar) {
+        throw new ApiError(500, "Avatar upload failed");
+    }
+
+    if (user.avatar?.public_id) {
+        try {
+            await cloudinary.uploader.destroy(user.avatar.public_id);
+        } catch (err) {
+            console.log("Old avatar deletion failed:", err);
+        }
+    }
+
+    user.avatar = {
+        url: uploadedAvatar.secure_url,
+        public_id: uploadedAvatar.public_id
+    };
+
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "User's avatar updated successfully")
+    );
+});
+
+const getUserProfile = asyncHandler(async(req,res)=>{
+
+})
+
+const updateUserBio = asyncHandler(async(req,res)=>{
+
+})
+
+
+
 export {
     RegisterUser,
     loginUser,
-    logoutUser
-    
+    logoutUser,
+    getCurrUser,
+    refreshAccessToken,
+    updateAvatar
 }

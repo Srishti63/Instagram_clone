@@ -5,30 +5,36 @@ import jwt from "jsonwebtoken";
 const userSchema = new Schema(
     {
         username :{
-            type : string ,
+            type : String ,
             required : true ,
             unique : true,
             lowerCase : true,
             trim : true
         },
         email :{
-            type: string ,
+            type: String ,
             required : true ,
             lowercase : true ,
             unique : true
         },
         password:{
-            type : string ,
+            type : String ,
             required : true
         },
         bio:{
-            type : string ,
+            type : String ,
             default : ""
         },
-        avatar:{
-            type : string ,
-            default : ""
+        avatar: {
+        url: {
+            type: String,
+            default: ""
         },
+        public_id: {
+            type: String,
+            default: ""
+        }
+    },
         followers:{
             type : mongoose.Schema.ObjectId,
             ref : "User"
