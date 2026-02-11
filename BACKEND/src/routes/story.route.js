@@ -5,7 +5,7 @@ import {
     markStorySeen,
     ViewersList
 } from "../controllers/story.controller.js";
-import { verifyJwt } from "../middlewares/auth.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js"; // Make sure this matches your multer config
 
 const router = express.Router();

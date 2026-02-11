@@ -8,11 +8,11 @@ const postSchema  = new mongoose.Schema(
             required : true
         },
         mediaUrl: {
-            type : string ,
+            type : String ,
             required : true 
         },
         caption: {
-            type : string ,
+            type : String ,
             default : ""
         },
         likes :{

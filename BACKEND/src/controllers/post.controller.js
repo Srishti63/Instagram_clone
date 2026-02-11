@@ -1,9 +1,9 @@
-import {asyncHandler} from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import {Post} from "../models/post.model";
-import { createActivity } from "./activity.controller";
-import { uploadOnCloudinary } from "../utils/cloudinary";
+import {asyncHandler} from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import {Post} from "../models/post.model.js";
+import { createActivity } from "./activity.controller.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const CreatePost = asyncHandler(async(req,res)=>{
     const mediaLocalPath = req.files?.media?.[0]?.path;

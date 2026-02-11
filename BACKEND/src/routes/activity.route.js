@@ -1,6 +1,6 @@
 import express from "express";
 import { getUserActivities, markActivitiesAsRead } from "../controllers/activity.controller.js";
-import { verifyJwt } from "../middlewares/auth.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
