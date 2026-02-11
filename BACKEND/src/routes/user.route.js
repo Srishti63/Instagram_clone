@@ -7,7 +7,9 @@ import {
     refreshAccessToken,
     updateAvatar,
     getUserProfile,
-    updateUserBio
+    updateUserBio,
+    verifyEmailOtp,
+    resendOtp
 } from "../controllers/user.controller.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js"; 
@@ -15,6 +17,11 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = express.Router();
 
 router.post("/register", RegisterUser);
+router.post("/verify-otp", verifyEmailOtp);
+router.post("/resend-otp" , resendOtp)
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-otp", verifyOtp);
+router.post("/reset-password", resetPassword);
 router.post("/login", loginUser);
 router.post("/logout", verifyJwt, logoutUser);
 router.get("/me", verifyJwt, getCurrUser);

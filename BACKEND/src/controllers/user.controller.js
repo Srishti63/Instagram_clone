@@ -6,6 +6,7 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {v2 as cloudinary} from "cloudinary";
 import jwt from "jsonwebtoken";
 import dns from "dns/promises";
+import { sendmail } from "../utils/sendemail.js";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -51,6 +52,9 @@ console.log("TYPE:", typeof email);
   }
 };
 
+ const generateOTP = () => {
+ return Math.floor(100000 + Math.random() * 900000).toString();
+ };
 
 const RegisterUser = asyncHandler(async (req, res) => {
     let { username, email, password } = req.body;
@@ -60,7 +64,7 @@ const RegisterUser = asyncHandler(async (req, res) => {
     }
 
     username = username.trim();
-    email = email.trim();
+    email = email.trim().toLowerCase();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -69,18 +73,17 @@ const RegisterUser = asyncHandler(async (req, res) => {
 
     const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(password)) {
-        throw new ApiError(400,"Password must be at least 8 characters and include uppercase, lowercase, and a number");
-    }
-
-    const isValidDomain = await checkEmailDomain(email);
-
-    if (!isValidDomain) {
-    throw new ApiError(400, "Email domain does not exist");
+        throw new ApiError(400, "Password must be strong");
     }
 
     const existedUser = await User.findOne({
         $or: [{ email }, { username }]
     });
+
+     const isValidDomain = await checkEmailDomain(email);
+    if (!isValidDomain) {
+        throw new ApiError(400, "Email domain does not exist");
+    }
 
     if (existedUser) {
         throw new ApiError(400, "User already exists");
@@ -92,12 +95,20 @@ const RegisterUser = asyncHandler(async (req, res) => {
         password
     });
 
-    const createdUser = await User.findById(user._id).select("-password");
+    const otp = generateOTP();
+
+    user.emailOtp = otp;
+    user.emailOtpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    await user.save();
+
+    await sendmail(user.email, otp);
 
     res.status(201).json(
-        new ApiResponse(201, createdUser, "User registered successfully")
+        new ApiResponse(201, null, "User registered. OTP sent to email.")
     );
 });
+
 
 const loginUser = asyncHandler(async(req,res)=>{
     const {username,email ,password} = req.body;
@@ -117,6 +128,10 @@ const loginUser = asyncHandler(async(req,res)=>{
 
     if(!isPasswordValid){
         throw new ApiError(400, "Invalid Credentials")
+    }
+
+    if (!user.isVerified) {
+    throw new ApiError(403, "Please verify your email first");
     }
 
      const {accessToken,refreshToken} = await generateAccessAndRefreshToken(user._id)
@@ -286,6 +301,169 @@ const updateUserBio = asyncHandler(async (req, res) => {
     );
 });
 
+const verifyEmailOtp = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        throw new ApiError(400, "Email and OTP are required");
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (user.emailOtp !== otp) {
+        throw new ApiError(400, "Invalid OTP");
+    }
+
+    if (user.emailOtpExpiry < Date.now()) {
+        throw new ApiError(400, "OTP expired");
+    }
+
+    user.isVerified = true;
+    user.emailOtp = undefined;
+    user.emailOtpExpiry = undefined;
+
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, null, "Email verified successfully. You can now login.")
+    );
+});
+
+const resendOtp = asyncHandler(async (req, res) => {
+
+    let { email } = req.body;
+
+    if (!email) {
+        throw new ApiError(401, "Email is required");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        throw new ApiError(401, "Invalid Email format");
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new ApiError(401, "User not found");
+    }
+
+    if (user.emailOtpExpiry && user.emailOtpExpiry > Date.now()) {
+        throw new ApiError(400, "Wait before requesting new OTP");
+    }
+
+    const otp = generateOTP();
+
+    user.emailOtp = otp;
+    user.emailOtpExpiry = Date.now() + 5 * 60 * 1000;
+
+    await user.save({ validateBeforeSave: false });
+
+    await sendmail(user.email, otp);
+
+    res.status(201).json(
+        new ApiResponse(201, {}, "Otp resent successfully")
+    );
+});
+const forgotPassword = asyncHandler(async (req, res) => {
+
+    const { email } = req.body;
+
+    if (!email) {
+        throw new ApiError(400, "Email is required");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        throw new ApiError(400, "Invalid email format");
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        return res.status(200).json(
+            new ApiResponse(200, {}, "If this email exists, OTP has been sent")
+        );
+    }
+
+    const otp = generateOTP();
+
+    user.emailOtp = otp;
+    user.emailOtpExpiry = Date.now() + 5 * 60 * 1000;
+    user.otpPurpose = "forgotPassword";
+
+    await user.save({ validateBeforeSave: false });
+
+    await sendmail(user.email, otp);
+
+    res.status(200).json(
+        new ApiResponse(200, {}, "OTP sent successfully")
+    );
+});
+const verifyOtp = asyncHandler(async (req, res) => {
+
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        throw new ApiError(400, "Email and OTP required");
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (!user.emailOtp || user.emailOtp !== otp) {
+        throw new ApiError(400, "Invalid OTP");
+    }
+
+    if (user.emailOtpExpiry < Date.now()) {
+        throw new ApiError(400, "OTP expired");
+    }
+
+    res.status(200).json(
+        new ApiResponse(200, {
+            purpose: user.otpPurpose
+        }, "OTP verified")
+    );
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+        throw new ApiError(400, "All fields required");
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (user.otpPurpose !== "forgotPassword") {
+        throw new ApiError(403, "Unauthorized request");
+    }
+
+    user.password = newPassword;
+
+    user.emailOtp = undefined;
+    user.emailOtpExpiry = undefined;
+    user.otpPurpose = undefined;
+
+    await user.save();  
+
+    res.status(200).json(
+        new ApiResponse(200, {}, "Password reset successful")
+    );
+});
+
 
 export {
     RegisterUser,
@@ -295,5 +473,10 @@ export {
     refreshAccessToken,
     updateAvatar,
     getUserProfile,
-    updateUserBio
+    updateUserBio,
+    verifyEmailOtp,
+    resendOtp,
+    forgotPassword,
+    verifyOtp,
+    resetPassword
 }

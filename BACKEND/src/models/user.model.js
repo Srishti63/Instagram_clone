@@ -21,8 +21,16 @@ const userSchema = new Schema(
             type : String ,
             required : true
         },
-        emailOtp :String,
-        emailOtpExpiry : Date,
+
+        emailOtp: String,
+
+        emailOtpExpiry: Date,
+ 
+        otpPurpose: {
+        type: String,
+        enum: ["verifyEmail", "forgotPassword"],
+        },
+
         isVerified :{
             type : Boolean,
             default : false
