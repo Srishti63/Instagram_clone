@@ -20,6 +20,8 @@ connectDB()
 import dotenv from "dotenv";
 dotenv.config({ path: "./.env" });
 import connectDB from "./db/index.js";
+import {redisClient, connectRedis } from "./utils/redisClient.js";
+await connectRedis();
 import { app } from "./app.js";
 
 

@@ -22,15 +22,6 @@ const userSchema = new Schema(
             required : true
         },
 
-        emailOtp: String,
-
-        emailOtpExpiry: Date,
- 
-        otpPurpose: {
-        type: String,
-        enum: ["verifyEmail", "forgotPassword"],
-        },
-
         isVerified :{
             type : Boolean,
             default : false
@@ -52,14 +43,14 @@ const userSchema = new Schema(
     refreshToken :{
         type: String
     },
-        followers:{
+        followers:[{
             type : mongoose.Schema.ObjectId,
             ref : "User"
-        },
-        following: {
+        }],
+        following: [{
             type : mongoose.Schema.ObjectId,
             ref : "User"
-        },
+        }],
         settings :{
             isPrivate : {
                 type : Boolean,
