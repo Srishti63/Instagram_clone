@@ -19,13 +19,37 @@ connectDB()
 */
 import dotenv from "dotenv";
 dotenv.config({ path: "./.env" });
+
 import connectDB from "./db/index.js";
-import {redisClient, connectRedis } from "./utils/redisClient.js";
-await connectRedis();
+import { connectRedis } from "./utils/redisClient.js";
 import { app } from "./app.js";
 
+import notificationService from "./services/notificationService.js";
+import InAppNotificationObserver from "./observers/inAppNotificationObserver.js";
+
+import http from "http";
+import { Server } from "socket.io";
+
+await connectRedis();
+
+const inAppObserver = new InAppNotificationObserver();
+notificationService.subscribe(inAppObserver);
 
 console.log("ENV CHECK:", process.env.CLOUDINARY_CLOUD_NAME);
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+initChatSocket(io);
+
+server.listen(5000, () => {
+    console.log("Server running on port 5000");
+});
 
 const startServer = async () => {
   try {
@@ -33,7 +57,7 @@ const startServer = async () => {
 
     const PORT = process.env.PORT || 8000;
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
 

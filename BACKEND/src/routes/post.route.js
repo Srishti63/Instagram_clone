@@ -1,7 +1,7 @@
 import express from "express";
 import { 
     CreatePost,
-    getFeedPosts,
+    getExplorePosts,
     EditPost,
     deletePost,
     toggleLikeOnPost
@@ -12,7 +12,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = express.Router();
 
 router.post("/", verifyJwt, upload.fields([{ name: "media", maxCount: 1 }]), CreatePost);
-router.get("/", verifyJwt, getFeedPosts);
+router.get("/", verifyJwt, getExplorePosts);
 router.put("/:postId", verifyJwt, EditPost);
 router.delete("/:postId", verifyJwt, deletePost);
 router.post("/:postId/like", verifyJwt, toggleLikeOnPost);

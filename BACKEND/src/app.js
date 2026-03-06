@@ -7,6 +7,7 @@ import postRouter from "./routes/post.route.js";
 import commentRouter from "./routes/comment.route.js";
 import storyRouter from "./routes/story.route.js";
 import activityRouter from "./routes/activity.route.js";
+import chatRouter from "./routes/chat.routes.js";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/v1/posts", postRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/stories", storyRouter);
 app.use("/api/v1/activities", activityRouter);
+app.use("/api/v1/chat", chatRouter);
 
 
 export { app };
