@@ -1,22 +1,3 @@
-/*import dotenv from "dotenv";
-import connectDB from "./db/index.js";
-import { app } from "./app.js";
-
-dotenv.config({ path: "./.env" });
-
-connectDB()
-  .then(() => {
-    app.get("/", (req, res) => {
-  res.send("Server is alive");
-});
-    app.listen(process.env.PORT || 8000, "0.0.0.0",() => {
-      console.log(`Server running on port ${process.env.PORT || 8000}`);
-    });
-  })
-  .catch((error) => {
-    console.log("MongoDB connection failed", error);
-  });
-*/
 import dotenv from "dotenv";
 dotenv.config({ path: "./.env" });
 
@@ -26,6 +7,7 @@ import { app } from "./app.js";
 
 import notificationService from "./services/notificationService.js";
 import InAppNotificationObserver from "./observers/inAppNotificationObserver.js";
+import { initChatSocket } from "./sockets/chatSocket.js";
 
 import http from "http";
 import { Server } from "socket.io";
@@ -34,8 +16,6 @@ await connectRedis();
 
 const inAppObserver = new InAppNotificationObserver();
 notificationService.subscribe(inAppObserver);
-
-console.log("ENV CHECK:", process.env.CLOUDINARY_CLOUD_NAME);
 
 const server = http.createServer(app);
 
@@ -47,9 +27,9 @@ const io = new Server(server, {
 });
 initChatSocket(io);
 
-server.listen(5000, () => {
-    console.log("Server running on port 5000");
-});
+// Expose io locally for other parts of the app if needed, 
+// though we usually pass io to where it's needed or export it.
+export { io };
 
 const startServer = async () => {
   try {
@@ -57,6 +37,7 @@ const startServer = async () => {
 
     const PORT = process.env.PORT || 8000;
 
+    // Remove the duplicate server.listen(5000) that existed previously
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

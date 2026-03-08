@@ -1,6 +1,10 @@
-import Message from "../models/message.model.js";
+import { Message } from "../models/message.model.js";
 
 const onlineUsers = new Map();
+
+export const getReceiverSocketId = (receiverId) => {
+  return onlineUsers.get(receiverId);
+};
 
 export const initChatSocket = (io) => {
   io.on("connection", (socket) => {
