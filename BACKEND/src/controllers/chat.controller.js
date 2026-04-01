@@ -1,23 +1,26 @@
 import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
-export const getUserConversations = async (req, res) => {
+export const getUserConversations = asyncHandler(async (req, res) => {
 
     const userId = req.user._id;
 
     const conversations = await Conversation.find({
         participants: userId
     })
-    .populate("participants")
-    .populate("lastMessage");
+    .populate("participants", "-password")
+    .populate("lastMessage")
+    .sort({ updatedAt: -1 });
 
-    res.json(conversations);
+    return res.status(200).json(new ApiResponse(200, conversations, "Conversations fetched successfully"));
 
-};
+});
 
 
 
-export const getMessages = async (req, res) => {
+export const getMessages = asyncHandler(async (req, res) => {
 
     const { conversationId } = req.params;
 
@@ -25,20 +28,30 @@ export const getMessages = async (req, res) => {
         conversationId
     }).sort({ createdAt: 1 });
 
-    res.json(messages);
+    return res.status(200).json(new ApiResponse(200, messages, "Messages fetched successfully"));
 
-};
+});
 
 
 
-export const createConversation = async (req, res) => {
+export const createConversation = asyncHandler(async (req, res) => {
 
     const { receiverId } = req.body;
 
-    const conversation = await Conversation.create({
-        participants: [req.user._id, receiverId]
+    if (req.user._id.toString() === receiverId.toString()) {
+        return res.status(400).json({ success: false, message: "Cannot create conversation with yourself" });
+    }
+
+    let conversation = await Conversation.findOne({
+        participants: { $all: [req.user._id, receiverId] }
     });
 
-    res.json(conversation);
+    if (!conversation) {
+        conversation = await Conversation.create({
+            participants: [req.user._id, receiverId]
+        });
+    }
 
-};
+    return res.status(200).json(new ApiResponse(200, conversation, "Conversation created/fetched successfully"));
+
+});

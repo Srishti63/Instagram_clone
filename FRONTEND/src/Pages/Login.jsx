@@ -60,6 +60,12 @@ export default function Login() {
               required
             />
           </div>
+          
+          <div className="flex justify-end">
+             <Link to="/forgot-password" className="text-sm font-semibold text-pink-500 hover:text-pink-600">
+               Forgot Password?
+             </Link>
+          </div>
 
           <button
             type="submit"

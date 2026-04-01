@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Comment } from "../models/comment.model.js";
 import { Post } from "../models/post.model.js";
+import { createActivity } from "./activity.controller.js";
 
 const addCommentOnPost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
@@ -20,8 +21,8 @@ const addCommentOnPost = asyncHandler(async (req, res) => {
   }
 
   const comment = await Comment.create({
-    post: postId,
-    owner: userId,
+    postId: postId,
+    userId: userId,
     text
   });
   if (post.owner.toString() !== userId.toString()) {
@@ -49,8 +50,8 @@ const getPostComments = asyncHandler(async (req, res) => {
   page = parseInt(page, 10);
   limit = parseInt(limit, 10);
 
-  const comments = await Comment.find({ post: postId })
-    .populate("owner", "username avatar")
+  const comments = await Comment.find({ postId: postId })
+    .populate("userId", "username avatar")
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
     .limit(limit);
@@ -75,7 +76,7 @@ const deleteComment = asyncHandler(async (req, res) => {
   }
 
   // sirf comment owner delete kar sakta hai
-  if (comment.owner.toString() !== userId.toString()) {
+  if (comment.userId.toString() !== userId.toString()) {
     throw new ApiError(403, "You are not allowed to delete this comment");
   }
 

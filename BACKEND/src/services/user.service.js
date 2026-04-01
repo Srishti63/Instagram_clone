@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
@@ -36,12 +37,59 @@ class UserService {
         return updatedUser;
     }
 
-    async getUserProfile(userId) {
-        const user = await User.findById(userId).select("-password -refreshToken");
-        if (!user) {
+    async getUserProfile(userId, currentUserId) {
+        // We use aggregation to get followers, following and isFollowing flag 
+        const user = await User.aggregate([
+            {
+                $match: { _id: (typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId) }
+            },
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "channel",
+                    as: "subscribers"
+                }
+            },
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "subscriber",
+                    as: "subscribedTo"
+                }
+            },
+            {
+                $addFields: {
+                    followersCount: { $size: "$subscribers" },
+                    followingCount: { $size: "$subscribedTo" },
+                    isFollowing: {
+                        $cond: {
+                            if: { $in: [(typeof currentUserId === 'string' ? new mongoose.Types.ObjectId(currentUserId) : currentUserId), "$subscribers.subscriber"] },
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    username: 1,
+                    email: 1,
+                    fullName: 1,
+                    avatar: 1,
+                    bio: 1,
+                    followersCount: 1,
+                    followingCount: 1,
+                    isFollowing: 1
+                }
+            }
+        ]);
+
+        if (!user?.length) {
             throw new ApiError(404, "User not found");
         }
-        return user;
+        return user[0];
     }
 
     async updateUserBio(userId, bio) {

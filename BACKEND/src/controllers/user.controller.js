@@ -58,7 +58,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
 
 const getUserProfile = asyncHandler(async (req, res) => {
     const userId = req.params.id || req.user._id;
-    const user = await userService.getUserProfile(userId);
+    const user = await userService.getUserProfile(userId, req.user._id);
     return res.status(200).json(new ApiResponse(200, user, "User profile fetched successfully"));
 });
 

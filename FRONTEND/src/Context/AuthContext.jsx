@@ -1,7 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import API from "../Api/axios";
-// We can import our existing useSocket to optionally reconnect when logged in
-import { useSocket } from "./SocketContext";
 
 const AuthContext = createContext();
 
@@ -10,7 +8,6 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const { socket } = useSocket();
 
     useEffect(() => {
         const checkCurrentUser = async () => {
@@ -77,7 +74,6 @@ export const AuthProvider = ({ children }) => {
             await API.post("/users/logout");
             setUser(null);
             localStorage.removeItem("userId");
-            if (socket) socket.disconnect();
         } catch (error) {
             console.error("Logout failed", error);
         }

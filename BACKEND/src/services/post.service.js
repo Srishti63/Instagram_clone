@@ -46,6 +46,18 @@ class PostService {
         };
     }
 
+    async getUserPosts(userId) {
+        if (!userId) {
+            throw new ApiError(400, "User ID is required");
+        }
+
+        const posts = await Post.find({ owner: userId })
+            .sort({ createdAt: -1 })
+            .populate("owner", "username avatar");
+
+        return posts;
+    }
+
     async editPost({ postId, userId, caption = "" }) {
         const post = await Post.findById(postId);
 

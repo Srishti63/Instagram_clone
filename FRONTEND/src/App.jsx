@@ -5,6 +5,10 @@ import Register from "./Pages/Register";
 import VerifyOTP from "./Pages/VerifyOTP";
 import Home from "./Pages/Home";
 import CreatePost from "./Pages/CreatePost";
+import Messages from "./Pages/Messages";
+import Profile from "./Pages/Profile";
+import ForgotPassword from "./Pages/ForgotPassword";
+import ResetPassword from "./Pages/ResetPassword";
 import Layout from "./Components/Layout/Layout";
 
 // A simple protected route wrapper that now wraps everything inside Layout
@@ -19,6 +23,8 @@ function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+      <Route path="/forgot-password" element={user ? <Navigate to="/" /> : <ForgotPassword />} />
+      <Route path="/reset-password" element={user ? <Navigate to="/" /> : <ResetPassword />} />
       <Route path="/verify-otp" element={<VerifyOTP />} />
       
       {/* Protected Routes wrapped in our Sidebar Layout */}
@@ -35,6 +41,22 @@ function App() {
         element={
           <ProtectedRoute>
             <CreatePost />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/messages" 
+        element={
+          <ProtectedRoute>
+            <Messages />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/profile/:id" 
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         } 
       />

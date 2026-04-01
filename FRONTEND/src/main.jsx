@@ -7,16 +7,13 @@ import { AuthProvider } from './Context/AuthContext.jsx'
 import { SocketProvider } from './Context/SocketContext.jsx'
 
 const RootApp = () => {
-  const userId = localStorage.getItem("userId");
-
   return (
     <BrowserRouter>
-      {/* SocketProvider gets placed inside so it can potentially access auth data down the line */}
-      <SocketProvider userId={userId}>
-        <AuthProvider>
+      <AuthProvider>
+        <SocketProvider>
           <App />
-        </AuthProvider>
-      </SocketProvider>
+        </SocketProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 };

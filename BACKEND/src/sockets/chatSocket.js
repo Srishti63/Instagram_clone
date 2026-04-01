@@ -1,4 +1,5 @@
 import { Message } from "../models/message.model.js";
+import { Conversation } from "../models/conversation.model.js";
 
 const onlineUsers = new Map();
 
@@ -25,6 +26,10 @@ export const initChatSocket = (io) => {
           conversationId,
           sender: senderId,
           text,
+        });
+
+        await Conversation.findByIdAndUpdate(conversationId, {
+          lastMessage: message._id
         });
 
         const receiverSocket = onlineUsers.get(receiverId);

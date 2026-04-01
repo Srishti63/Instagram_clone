@@ -2,6 +2,7 @@ import express from "express";
 import { 
     CreatePost,
     getExplorePosts,
+    getUserPosts,
     EditPost,
     deletePost,
     toggleLikeOnPost
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.post("/", verifyJwt, upload.fields([{ name: "media", maxCount: 1 }]), CreatePost);
 router.get("/", verifyJwt, getExplorePosts);
+router.get("/user/:userId", verifyJwt, getUserPosts);
 router.put("/:postId", verifyJwt, EditPost);
 router.delete("/:postId", verifyJwt, deletePost);
 router.post("/:postId/like", verifyJwt, toggleLikeOnPost);

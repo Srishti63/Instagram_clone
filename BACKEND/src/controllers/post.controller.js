@@ -29,6 +29,14 @@ const getExplorePosts = asyncHandler(async (req, res) => {
     );
 });
 
+const getUserPosts = asyncHandler(async (req, res) => {
+    const posts = await postService.getUserPosts(req.params.userId);
+
+    res.status(200).json(
+        new ApiResponse(200, posts, "User posts fetched successfully")
+    );
+});
+
 const EditPost = asyncHandler(async (req, res) => {
     const post = await postService.editPost({
         postId: req.params.postId,
@@ -69,4 +77,4 @@ const toggleLikeOnPost = asyncHandler(async (req, res) => {
     );
 });
 
-export { CreatePost, getExplorePosts, EditPost, deletePost, toggleLikeOnPost };
+export { CreatePost, getExplorePosts, getUserPosts, EditPost, deletePost, toggleLikeOnPost };

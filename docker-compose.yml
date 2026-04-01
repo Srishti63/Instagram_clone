@@ -1,0 +1,50 @@
+services:
+  backend:
+    build: ./BACKEND
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./BACKEND:/app
+      - /app/node_modules
+
+    command: npm run dev
+    env_file:
+      - ./BACKEND/.env
+    
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - NODE_ENV=development
+
+  frontend:
+    build: 
+      context: ./FRONTEND
+      target: build
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./FRONTEND:/app
+      - /app/node_modules
+    command: npm run dev -- --host --port 3000
+    depends_on:
+      - backend
+    env_file:
+      - ./FRONTEND/.env
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo-data:

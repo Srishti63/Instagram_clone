@@ -6,12 +6,14 @@ const conversationSchema = new mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         ref : "User"
     }],
-    lastmessage:{
+    lastMessage:{
         type: mongoose.Schema.Types.ObjectId,
         ref : "Message"
     }
 },{
     timestamps : true
 })
+
+conversationSchema.index({ updatedAt: -1 });
 
 export const Conversation = mongoose.model("Conversation", conversationSchema);

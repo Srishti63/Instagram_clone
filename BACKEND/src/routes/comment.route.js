@@ -9,6 +9,6 @@ import { verifyJwt } from "../middlewares/auth.middleware.js";
 const router = express.Router();
 router.post("/:postId", verifyJwt, addCommentOnPost);
 router.get("/:postId", verifyJwt, getPostComments);
-router.delete("/:commentId", verifyJwt, deleteComment);
+router.delete("/c/:commentId", verifyJwt, deleteComment);
 
 export default router;
